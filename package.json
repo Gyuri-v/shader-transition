@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 1.1.1.123 --port 7003 --open & num run sass",
+    "dev": "vite --host 1.1.1.123 --port 7003 --open & npm run sass",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "watch": "vite build --watch",
