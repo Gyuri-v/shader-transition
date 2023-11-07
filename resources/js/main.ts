@@ -18,10 +18,16 @@ const App = function () {
   const $container = document.querySelector('.container') as HTMLElement;
   const $canvas = document.querySelector('canvas.webgl') as HTMLElement;
 
-  let planeGeometry = null as Object3D,
-      planeMaterial = null as Object3D,
-      plane = null as Object3D;
-  const planeSize = { box: null as Object3D, height: 0 as number, depth: 0 as number }
+  const scrollSize = [
+    { name: 'crossfade',  element: document.querySelector('.crossfade') as HTMLElement,  top: 0, bottom: 0 },
+    { name: 'slope',      element: document.querySelector('.slope') as HTMLElement,      top: 0, bottom: 0 },
+    { name: 'zoom',       element: document.querySelector('.zoom') as HTMLElement,       top: 0, bottom: 0 },
+  ];
+
+  let planeGeometry = null as any,
+      planeMaterial = null as any,
+      plane = null as any;
+  const planeSize = { box: null as any, height: 0 as number, depth: 0 as number }
 
   const imageDetails = { width: 0, height: 0, aspectRatio: 0 }
   const imageInfos = [
@@ -111,7 +117,8 @@ const App = function () {
         u_texture2: { value: imageInfos[1].texture },
         u_texture3: { value: imageInfos[2].texture },
         u_transitionTexture: { value: textureLoader.load(transitionArray[0]) },
-        u_progress: { value: 0.6 },
+        u_progress1: { value: 0 },
+        u_progress2: { value: 0 },
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
@@ -128,7 +135,18 @@ const App = function () {
     areaWidth = window.innerWidth;
     areaHeight = window.innerHeight;
     pageOffsetHeight = $container.offsetHeight - areaHeight;
+
+    for (let i = 0; i < scrollSize.length; i++) {
+      const scrollItem = scrollSize[i];
+
+      const elemTop = scrollItem.element.offsetTop;
+      const elemHeight = scrollItem.element.offsetHeight;
+
+      scrollItem.top = elemTop;
+      scrollItem.bottom = elemTop + elemHeight;
+    }
     
+    // three
     camera.aspect = areaWidth / areaHeight;
     camera.updateProjectionMatrix();
 
@@ -145,6 +163,7 @@ const App = function () {
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 
     renderRequest();
+    
   }
 
   // Render
@@ -162,10 +181,24 @@ const App = function () {
 
   // Scroll
   const scroll = function () {
-    const progress = window.scrollY / pageOffsetHeight;
-    
     if ( planeMaterial ) {
-      planeMaterial.uniforms.u_progress.value = progress;
+    
+      for (let i = 0; i < scrollSize.length; i++) {
+        const scrollItem = scrollSize[i];
+        
+        if ( 
+          window.scrollY > scrollItem.top - areaHeight && 
+          window.scrollY < scrollItem.top + areaHeight
+        ) {
+          const progress = Math.max(0, Math.min(1, (window.scrollY - (scrollItem.top - areaHeight/2)) / areaHeight));
+
+          if ( i == 1 ) {
+            planeMaterial.uniforms.u_progress1.value = progress;
+          } else if ( i == 2 ) {
+            planeMaterial.uniforms.u_progress2.value = progress;
+          }
+        }
+      }
     }
   }
   
