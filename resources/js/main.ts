@@ -19,9 +19,11 @@ const App = function () {
   const $canvas = document.querySelector('canvas.webgl') as HTMLElement;
 
   const scrollSize = [
-    { name: 'crossfade',  element: document.querySelector('.crossfade') as HTMLElement,  top: 0, bottom: 0 },
-    { name: 'slope',      element: document.querySelector('.slope') as HTMLElement,      top: 0, bottom: 0 },
-    { name: 'zoom',       element: document.querySelector('.zoom') as HTMLElement,       top: 0, bottom: 0 },
+    { name: 'perlin',  element: document.querySelector('.perlin') as HTMLElement,  top: 0, bottom: 0 },
+    { name: 'squares', element: document.querySelector('.squares') as HTMLElement, top: 0, bottom: 0 },
+    { name: 'cells',   element: document.querySelector('.cells') as HTMLElement,   top: 0, bottom: 0 },
+    { name: 'slope',   element: document.querySelector('.slope') as HTMLElement,   top: 0, bottom: 0 },
+    { name: 'zoom',    element: document.querySelector('.zoom') as HTMLElement,    top: 0, bottom: 0 },
   ];
 
   let planeGeometry = null as any,
@@ -34,16 +36,18 @@ const App = function () {
     { id: 1, path: 'resources/images/img1.jpg', texture: null as any, mesh: null as any },
     { id: 2, path: 'resources/images/img2.jpg', texture: null as any, mesh: null as any },
     { id: 3, path: 'resources/images/img3.jpg', texture: null as any, mesh: null as any },
+    { id: 4, path: 'resources/images/img4.jpg', texture: null as any, mesh: null as any },
+    { id: 5, path: 'resources/images/img1.jpg', texture: null as any, mesh: null as any },
+    { id: 6, path: 'resources/images/img2.jpg', texture: null as any, mesh: null as any },
   ];
-
-  const transitionArray = [
-    'resources/transition/noise.jpg',
-    'resources/transition/transition1.png',
-    'resources/transition/transition2.png',
-    'resources/transition/transition3.png',
-    'resources/transition/transition4.png',
-    'resources/transition/transition5.png',
-    'resources/transition/transition6.png',
+  const transitionInfos = [
+    { path: 'resources/transition/transition1.png', texture: null as any },
+    { path: 'resources/transition/transition2.png', texture: null as any },
+    { path: 'resources/transition/transition3.png', texture: null as any },
+    { path: 'resources/transition/transition4.png', texture: null as any },
+    { path: 'resources/transition/transition5.png', texture: null as any },
+    { path: 'resources/transition/transition6.png', texture: null as any },
+    { path: 'resources/transition/noise.jpg', texture: null as any }
   ]
   
   const init = function () {
@@ -94,6 +98,7 @@ const App = function () {
 
   // Setting
   const setImages = function () {
+
     imageInfos.forEach((item, idx) => {
       if ( item.texture ) item.texture.dispose();
       item.texture = textureLoader.load(item.path, (tex:any) => {
@@ -106,6 +111,11 @@ const App = function () {
         resize();
       });
     });
+
+    transitionInfos.forEach((item, idx) => {
+      if ( item.texture ) item.texture.dispose();
+      item.texture = textureLoader.load(item.path);
+    });
   }
 
   const create3dImage = function () {
@@ -115,10 +125,11 @@ const App = function () {
       uniforms: {
         u_texture1: { value: imageInfos[0].texture },
         u_texture2: { value: imageInfos[1].texture },
-        u_texture3: { value: imageInfos[2].texture },
-        u_transitionTexture: { value: textureLoader.load(transitionArray[0]) },
-        u_progress1: { value: 0 },
-        u_progress2: { value: 0 },
+        u_transitionTexture: { value: transitionInfos[0].texture },
+        u_transitionShow: { value: 0 },
+        u_slopeShow: { value: 0 },
+        u_zoomShow: { value: 0 },
+        u_progress: { value: 0 },
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
@@ -187,15 +198,28 @@ const App = function () {
         const scrollItem = scrollSize[i];
         
         if ( 
-          window.scrollY > scrollItem.top - areaHeight && 
-          window.scrollY < scrollItem.top + areaHeight
+          window.scrollY > scrollItem.top - 20 && 
+          window.scrollY < scrollItem.top + areaHeight + 20
         ) {
-          const progress = Math.max(0, Math.min(1, (window.scrollY - (scrollItem.top - areaHeight/2)) / areaHeight));
+          const progress = Math.max(0, Math.min(1, (window.scrollY - scrollItem.top) / areaHeight));
 
-          if ( i == 1 ) {
-            planeMaterial.uniforms.u_progress1.value = progress;
-          } else if ( i == 2 ) {
-            planeMaterial.uniforms.u_progress2.value = progress;
+          planeMaterial.uniforms.u_texture1.value = imageInfos[i].texture;
+          planeMaterial.uniforms.u_texture2.value = imageInfos[i + 1].texture;
+          planeMaterial.uniforms.u_progress.value = progress;
+
+          if ( i == 3 ) {
+            planeMaterial.uniforms.u_transitionShow.value = 0;
+            planeMaterial.uniforms.u_slopeShow.value = 1;
+            planeMaterial.uniforms.u_zoomShow.value = 0;
+          } else if ( i == 4 ) {
+            planeMaterial.uniforms.u_transitionShow.value = 0;
+            planeMaterial.uniforms.u_slopeShow.value = 0;
+            planeMaterial.uniforms.u_zoomShow.value = 1;
+          } else {
+            planeMaterial.uniforms.u_transitionTexture.value = imageInfos[i].texture;
+            planeMaterial.uniforms.u_transitionShow.value = 1;
+            planeMaterial.uniforms.u_slopeShow.value = 0;
+            planeMaterial.uniforms.u_zoomShow.value = 0;
           }
         }
       }

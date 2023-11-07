@@ -54,6 +54,7 @@ table {
 .container section {
   position: relative;
   height: 200vh;
+  border: 1px solid red;
 }
 .container section .sticky {
   display: flex;
