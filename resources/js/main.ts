@@ -4,13 +4,17 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import vertexShader from '../shaders/vertex.glsl?raw';
 import fragmentShader from '../shaders/fragment.glsl?raw';
 import gsap from 'gsap';
-import dat from 'dat.gui';
 
 const DEBUG = location.search.indexOf('debug') > -1;
 
 const App = function () {
   let areaWidth:number, areaHeight:number;
-  let renderer, scene, camera, light, controls, gui, textureLoader;
+  let renderer:THREE.WebGLRenderer, 
+      scene:THREE.Scene, 
+      camera:THREE.PerspectiveCamera, 
+      light:THREE.AmbientLight, 
+      controls:OrbitControls, 
+      textureLoader:THREE.TextureLoader;
   let cameraFovY:number;
   let pageOffsetHeight:number;
   let isRequestRender = false;
@@ -27,7 +31,7 @@ const App = function () {
     { name: 'zoom',    element: document.querySelector('.zoom') as HTMLElement,    top: 0, bottom: 0 },
   ];
 
-  let planeGeometry = null as any,
+  let planeGeometry = null,
       planeMaterial = null as any,
       plane = null as any;
   const planeSize = { box: null as any, height: 0 as number, depth: 0 as number }
