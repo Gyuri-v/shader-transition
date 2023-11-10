@@ -16,6 +16,7 @@ vec2 distort(vec2 uv, float progress) {
   uv = uv * 2.0 - 1.0;
   vec2 distorted = uv / (1.0 - progress * length(uv));
   return (distorted + 1.0) * 0.5;
+  // length(좌표 하나) : 원점과의 거리 return  __ distance 보다 조금 더 빠름
 }
 
 void main () {
@@ -24,16 +25,18 @@ void main () {
   float threshold = 0.2;
   float progress = u_progress * (1.0 + threshold * 2.0) - threshold; // -0.2 ~ 1.2
   float transition = 0.0; 
+
+  // 1. TransitionTexture
+  float transition1 = clamp((progress - transitionColor.r) * (1.0 / threshold), 0.0, 1.0) * u_transitionShow;
   // clamp(a:현재값, b:최소값, c:최대값) 
   // clamp 하지않으면 transitionColor.r=0 -> -1~6 / itionColor.r=1 -> -6~1 --- 각각 다르게 증가할듯
   // threshold로 위의 수식을 해주지 않으면 transitionColor.r=0 -> 0~1 - 얘만 증가하고 / itionColor.r=1 -> -1~0 -> 0->0
 
-  // 1. TransitionTexture
-  float transition1 = clamp((progress - transitionColor.r) * (1.0 / threshold), 0.0, 1.0) * u_transitionShow;
-
   // 2. Slope
   float transition2 = v_uv.x - v_uv.y * 2.0 + u_progress * 3.1 - 0.55;
   transition2 = smoothstep(0.45, 0.55, transition2) * u_slopeShow;
+  // step(0.5, x) : 0.5 보다 x 가 크면 1, 아니면 0
+  // smoothstep(0., 1., x) :  step 과 비슷하지만, 첫번째 인자와 두번째 인자 사이에서 보간이 일어남 - 대각선처럼
 
   // 3. Zoom
   float progress2 = smoothstep(0.5, 1.0, u_progress);
