@@ -70,6 +70,9 @@ table {
   font-weight: 600;
   color: #fff;
 }
+.container section.changes {
+  height: 600vh;
+}
 .container canvas {
   position: fixed;
   top: 0;
