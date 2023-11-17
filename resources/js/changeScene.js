@@ -8,20 +8,19 @@ import gsap from 'gsap';
 const DEBUG = location.search.indexOf('debug') > -1;
 
 const App = function () {
-  let areaWidth, areaHeight, areaRatio;
+  let areaWidth, areaHeight;
   let renderer, scene, camera, light, controls, textureLoader;
   let isRequestRender;
-  let plane;
+  let plane, cameraFovY;
+
+  // window
+  areaWidth = window.innerWidth;
+  areaHeight = window.innerHeight;
 
   const $container = document.querySelector('.container');
   const $canvas = document.querySelector('canvas.webgl');
 
   const init = function () {
-    // window
-    areaWidth = window.innerWidth;
-    areaHeight = window.innerHeight;
-    areaRatio = areaHeight/areaWidth;
-    
     // renderer
     renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true, alpha: true });
     renderer.setPixelRatio( Math.min(window.devicePixelRatio, 2) );
@@ -34,6 +33,7 @@ const App = function () {
     // Camera
     camera = new THREE.PerspectiveCamera(45, areaWidth/areaHeight, 1, 100);
     camera.position.set(0, 0, 1);
+    cameraFovY = camera.position.z * camera.getFilmHeight() / camera.getFocalLength();
     
     // Light
     // light = new THREE.AmbientLight('#fff', 1);
@@ -57,11 +57,13 @@ const App = function () {
         // renderRequest();
       }
     }
+
+    resize();
   }
 
   // SetModel
   const setModel = function () {
-    const planeGeometry = new THREE.PlaneGeometry(1, areaRatio, 50, 50);
+    const planeGeometry = new THREE.PlaneGeometry(1, 1, 50, 50);
     const planeMaterial = new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
       uniforms: {
@@ -79,17 +81,23 @@ const App = function () {
 
   // Resize
   const resize = function () {
-    areaWidth = window.areaWidth;
-    areaHeight = window.areaHeight;
-    areaRatio = areaHeight/areaWidth;
+    areaWidth = window.innerWidth;
+    areaHeight = window.innerHeight;
     
     camera.aspect = areaWidth / areaHeight;
     camera.updateProjectionMatrix();
 
+    // 화면에 fit하게 맞추기
+    if ( areaHeight/areaWidth < 1 ) {
+      const fitRatio = cameraFovY * camera.aspect;
+      plane.scale.set(fitRatio, fitRatio, 1);
+    } else {
+      const fitRatio = cameraFovY / 1;
+      plane.scale.set(fitRatio, fitRatio, 1);
+    }
+
     renderer.setSize(areaWidth, areaHeight);
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
-    
-    // renderRequest();
   }
 
   // Render
@@ -118,8 +126,6 @@ const App = function () {
         new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
       world.scene.add(mesh);
-
-      console.log('1', mesh, world);
 
       return {
         texture: world.renderTarget.texture,
@@ -154,7 +160,7 @@ const App = function () {
       const world = createSubScene('indianred');
       
       const mesh = new THREE.Mesh(
-        new THREE.TorusKnotGeometry(0.39, 17),
+        new THREE.TorusKnotGeometry(0.39, 0.17),
         new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true })
       );
       world.scene.add(mesh);
@@ -169,13 +175,14 @@ const App = function () {
         }
       }
     })()
-  ]
+  ];
 
   function createSubScene (background) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(background);
 
-    const camera = new THREE.PerspectiveCamera(45, areaWidth/areaHeight, 1, 100);
+    // const camera = new THREE.PerspectiveCamera(45, areaWidth/areaHeight, 1, 100);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.set(0, 0, 4);
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -183,7 +190,7 @@ const App = function () {
     scene.add(directionalLight);
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-    const renderTarget = new THREE.WebGLRenderTarget(areaWidth, areaHeight);
+    const renderTarget = new THREE.WebGLRenderTarget(1024, 1024);
     // 직접 렌더링 할 수 있는 텍스처
 
     function render () {
@@ -196,8 +203,8 @@ const App = function () {
 
   // Animation
   gsap.ticker.add(animate);
-
   function animate (time, deltaTime) {
+
     if ( plane ) {
       const index = Math.floor(plane.material.uniforms.u_progress.value);
       const nextIndex = Math.ceil(plane.material.uniforms.u_progress.value);
